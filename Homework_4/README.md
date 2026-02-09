@@ -46,7 +46,7 @@ aws configure
    - Scan on push: Disabled
 3. Copy repository URI
 
- ![ECR Image](screenshots\hello_service.png)
+ ![ECR Image](screenshots/hello_service.png)
 
 ### Step 3: Build and Push Docker Image
 
@@ -58,7 +58,7 @@ aws ecr list-images \
   --region us-west-2
 ```
 
-![ImageIds](screenshots\imageids.png)
+![ImageIds](screenshots/imageids.png)
 
 ### Step 4: Create ECS Cluster
  
