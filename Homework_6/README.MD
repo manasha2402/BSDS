@@ -79,10 +79,11 @@ Test 1: 5 users - 2 minutes
 ![Image](screenshots/3Instances.png)
 
 ### Resilience Test: Stopping an Instance
+
 - Stopped a task during load test
-- Service stayed up: Yes / No
-- New task spun up automatically: Yes / No
-- Screenshots:
+- Service stayed up: Yes — 0 failures in Locust
+- New task spun up automatically: ECS replaced the stopped task
+- The ALB detected the unhealthy target and routed traffic to remaining instances.
 
 ![Image](screenshots/delete_task.png)
 
@@ -91,14 +92,6 @@ Task Restarting
 
 ![Image](screenshots/after_task_deletion.png)
 No failure
-
-
-### Resilience Test: Stopping an Instance
-
-- Stopped a task during load test
-- Service stayed up: Yes — 0 failures in Locust
-- New task spun up automatically: ECS replaced the stopped task
-- The ALB detected the unhealthy target and routed traffic to remaining instances.
 
 ### Stress Testing: 50 Users
 
@@ -110,13 +103,19 @@ No failure
 | Max | 3,105ms | 2,587ms | 7,261ms |
 | Failures | 0 | 0 | 0 |
 
-Even with 50 users, the system handled the load with 0 failures — 
-auto scaling expanded to 4 instances to meet the demand.
+- Even with 50 users, the system handled the load with 0 failures — auto scaling expanded to 4 instances to meet the demand.
 
 ![Image](screenshots/50Users.webp)
 ![Image](screenshots/50task_list.png)
 
+### Vertical vs Horizontal Scaling
 
+| | Vertical Scaling | Horizontal Scaling |
+|---|---|---|
+| Definition | Bigger machine (more CPU/RAM) | More machines |
+| Pros | Simple, no code changes needed | Handles unlimited growth, fault tolerant |
+| Cons | Has an upper limit, single point of failure | More complex infrastructure (ALB, auto scaling) |
+| Best for | Quick fixes, small workloads | Production systems, high availability |
 
 ### Conclusion
 - The same 20-user load that degraded Part 2 (1,104ms avg) 
