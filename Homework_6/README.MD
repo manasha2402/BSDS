@@ -92,6 +92,16 @@ Task Restarting
 
 ![Image](screenshots/after_task_deletion.png)
 No failure
+## Scaling Behavior Predictions (Informed by Experimental Data)
+
+Based on observed results — 20 users scaled to 3 instances (406ms avg), 50 users scaled to 4 instances (710ms avg):
+
+| Scenario | Predicted Behavior |
+|---|---|
+| **80+ users, sudden spike** | Hits max 4 instances quickly, but 4 instances won't be enough — expect response times >1.5s and potential timeouts. Would need to raise max instance count. |
+| **50 users → 5 users (drop-off)** | After 300s scale-in cooldown, instances gradually reduce from 4 back to 2 as CPU drops below 70% target |
+| **Periodic bursts (50 users every 10 min)** | 300s cooldown prevents rapid flapping; instances likely stay at 3-4 between bursts rather than scaling down fully |
+| **Single instance failure under load** | Confirmed: ALB reroutes traffic, ECS replaces task, 0 failures observed. Brief latency spike but no downtime. |
 
 ### Stress Testing: 50 Users
 
@@ -107,6 +117,7 @@ No failure
 
 ![Image](screenshots/50Users.webp)
 ![Image](screenshots/50task_list.png)
+
 
 ### Vertical vs Horizontal Scaling
 
