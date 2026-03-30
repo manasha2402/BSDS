@@ -176,7 +176,7 @@ Rebuffering threshold: **p99 latency > 500ms**. We also monitor `/metrics` for `
 2. **CDN is the first bottleneck** - the circuit breaker opens at ~300 users, forcing local fallback
 3. **Circuit breaker + local fallback is effective** - 0 HTTP failures across all runs despite heavy load; the service degrades gracefully rather than crashing
 
-### Local Baseline (MacBook, no network latency)
+### Local
 
 ![Local 2000 users stats](public/L2000S.png)
 
@@ -240,4 +240,4 @@ cd ../terraform && terraform destroy
 ---
 
 ## Authors
-Ananyaa Mylsamy · Manasha Sekar - CS6650, Spring 2026
+Ananyaa Mylsamy · Manasha Sekar
