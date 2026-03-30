@@ -82,6 +82,10 @@ Rebuffering threshold: **p99 latency > 500ms**. We also monitor `/metrics` for `
 
 ## 5. Project Plan
 
+**Project Board:** https://www.meistertask.com/projects/mtyzf2tc09/join/
+
+![MeisterTask Board](public/MeisterTask.png)
+
 | Week | Milestone | Owner | Status |
 |------|-----------|-------|--------|
 | Week 1 | Go services built, Terraform ready, Experiment 1 results on Fargate | Ananyaa (service) · Manasha (infra) | **Done** |
