@@ -1,0 +1,77 @@
+Project Update
+Updated 1 week ago by Manasha Sekar
+Project Update: Distributed Music Streaming Simulation 
+  
+1. Group Members 
+This project is being done by Ananyaa Mylsamy and Manasha Sekar (both in the EST timezone).
+ 
+2. Experiments 
+We plan to run three experiments:
+* Max Concurrent Streams Before Rebuffering: We gradually increase the number of concurrent streams on a single instance to find the exact point where chunk delivery latency exceeds 500 ms. This tells us the hard capacity limit of one instance before quality breaks down. 
+* Adaptive Bitrate Switching Under Load: We compare a fixed high-quality stream against an adaptive mode that drops to a lower resolution when latency spikes. This is important because real streaming services like Spotify use adaptive bitrate to prioritise continuity over quality, and we want to measure exactly how much re-buffering it prevents.
+* Horizontal Scaling: We test multiple ECS instances under 500, 1000, and 2000 concurrent streams. This lets us verify whether our system scales linearly and identify where bottlenecks appear beyond a single instance. 
+  
+These experiments cover the three main levers of streaming performance: single-instance limits, quality adaptation, and horizontal scale-out. 
+  
+3. How Our Team Adds Value Beyond AI Engineering decisions around AWS ECS Fargate deployment, Terraform infrastructure automation, and tuning circuit breaker and fail-fast thresholds based on actual latency measurements. We are also designing the Locust load testing scenarios ourselves and interpreting results in the context of real-world streaming behaviour.
+  
+4. Timeline 
+*  Week 1: Finalize Go services (Streaming + CDN Cache) and deploy on AWS ECS Fargate via Terraform. 
+*  Week 2: Run Experiments 1 and 2, collect and analyse results. 
+*  Week 3: Run Experiment 3 (horizontal scaling), compile all findings. 
+*  Week 4: Write up final report and prepare the presentation.
+
+
+
+Problem, Team, and Overview of Experiments
+Describe the problem you want to solve, and why it is important for your future stakeholders. Introduce each team member, and what they bring to the team. Also identify the kinds of results your experiments will be evaluating, the role AI will play within your project, and your plans to support observability of your system.
+Project Plan and Recent Progress
+Describe your recent progress in activities related to the proposal. This should include a timeline and breakdown of tasks, in addition to an overview of "who is doing what" in terms of the project plan you have created, and again, how you are leveraging AI within this plan. Specifically, identify what you anticipate to be the cost and benefits of using AI within your project development.
+Objectives
+Define the short- and long-term objectives of your project. Note that a project should have a long-term vision that expands beyond the course, and your plan to support observability is critical. This most likely means that you will be identifying future work in a concrete way. If you project includes AI components, identify how you going to ensure performance, reliability, and cost control for stakeholders who deploy your system.
+Related work
+Discuss the related work pertinent to the project, placing the proposed project in the context of this work. This should include readings from the course, but can also include any/all outside material that you find useful. Included in this, identify the 3 other projects on Piazza that are related to yours, how they are similar and how they are different. Feel free to reach out to those project teams to let them know that you are referencing their work! :)
+Methodology
+Describe the methods and proposed approach, providing sufficient details to allow a reader to assess the feasibility of the proposed activities. Two critical aspects here are (1) how you will be using AI, and (2) support for observability of your system. Provide a detailed overview of the experiments you will be performing, and what tradeoffs you are evaluating.
+Preliminary Results
+For each experiment you have designed, include all preliminary results you have collected. Identify what is left to collect/analyze to finish these results for the project within the timeline. What do you think the pathological worst-case/base-case workload for you, and why?
+Impact
+Explain the anticipated significance of the work. Why are people going to see this project and care about your results? Can other people in the class use your project and help you test it (that is FANTASTIC if you can do that!)?
+
+
+we are showing week one progress, is this enough ??
+
+
+
+
+assignment requirements
+:
+
+Part II: Milestone 1 Report!  Due Monday 9am (though this is a team effort, please make sure that each team member submits individually!)
+We are not expecting a full final report, but instead the beginning of the code base, some initial experimental results, a project plan with tasks and "who is doing what"...  all the things that are going to point to success by the end of the semester!
+For your submission, please include the following:
+1) A repo link to your code and tests 2) A detailed project plan (you do not have to use a heavy weight project management tool, but maybe something simple like __MeisterTaskLinks to an external site.__ or similar!). 3) Initial charts and graphs for results 4) A short, 2 minute video capture walkthrough of your project's "elevator pitch" to get stakeholders interested! :) 5) A short report, no more than 5 pages, covering the details __here__ 
+Have a blast with this, it should be an awesome piece of your future portfolio!!!! 
+
+
+Problem, Team, and Overview of Experiments
+==========================================
+Describe the problem you want to solve, and why it is important for your future stakeholders.  Introduce each team member, and what they bring to the team. Also identify the kinds of results your experiments will be evaluating, the role AI will play within your project, and your plans to support observability of your system. 
+Project Plan and Recent Progress
+================================
+Describe your recent progress in activities related to the proposal.  This should include a timeline and breakdown of tasks, in addition to an overview of "who is doing what" in terms of the project plan you have created, and again, how you are leveraging AI within this plan.  Specifically, identify what you anticipate to be the cost and benefits of using AI within your project development.  
+Objectives
+==========
+Define the short- and long-term objectives of your project. Note that a project should have a long-term vision that expands beyond the course, and your plan to support observability is critical. This most likely means that you will be identifying future work in a concrete way.  If you project includes AI components, identify how you going to ensure performance, reliability, and cost control for stakeholders who deploy your system.
+Related work
+============
+Discuss the related work pertinent to the project, placing the proposed project in the context of this work.  This should include readings from the course, but can also include any/all outside material that you find useful.  Included in this, identify the 3 other projects on Piazza that are related to yours, how they are similar and how they are different.  Feel free to reach out to those project teams to let them know that you are referencing their work! :)
+Methodology
+===========
+Describe the methods and proposed approach, providing sufficient details to allow a reader to assess the feasibility of the proposed activities. Two critical aspects here are (1) how you will be using AI, and (2) support for observability of your system.  Provide a detailed overview of the experiments you will be performing, and what tradeoffs you are evaluating.  
+Preliminary Results
+===================
+For each experiment you have designed, include all preliminary results you have collected.  Identify what is left to collect/analyze to finish these results for the project within the timeline. What do you think the pathological worst-case/base-case workload for you, and why?
+Impact
+======
+Explain the anticipated significance of the work.  Why are people going to see this project and care about your results?  Can other people in the class use your project and help you test it (that is FANTASTIC if you can do that!)?
