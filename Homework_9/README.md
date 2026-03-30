@@ -95,7 +95,29 @@ Rebuffering threshold: **p99 latency > 500ms**. We also monitor `/metrics` for `
 
 ---
 
-## 6. Preliminary Results - Experiment 1 (Fargate, Single Instance, 0.25 vCPU)
+## 6. Preliminary Results - Experiment 1
+
+### Local Test (MacBook, ~1 effective vCPU)
+
+**Statistics:**
+
+![Local 2000 users stats](public/L2000S.png)
+
+**Charts:**
+
+![Local 2000 users charts](public/L2000C.png)
+
+**Terminal:**
+
+![Local 2000 users terminal](public/L2000T.png)
+
+**What happened:**
+
+Local Mac handled **2,000 concurrent users** with p95 320ms and 0 rebuffers, confirming that the 0.25 vCPU Fargate constraint - not the application code - is the binding bottleneck. The breaking point shifts from ~500 users on Fargate to 2,000+ locally, a ~4x difference matching the CPU ratio (0.25 vCPU vs ~1 effective vCPU on a MacBook).
+
+---
+
+### AWS Test (Fargate, Single Instance, 0.25 vCPU)
 
 ### Summary Table
 
@@ -175,16 +197,6 @@ Rebuffering threshold: **p99 latency > 500ms**. We also monitor `/metrics` for `
 1. **Single-instance capacity limit: ~400–500 concurrent streams** on 0.25 vCPU Fargate before p99 crosses the 500ms rebuffer threshold
 2. **CDN is the first bottleneck** - the circuit breaker opens at ~300 users, forcing local fallback
 3. **Circuit breaker + local fallback is effective** - 0 HTTP failures across all runs despite heavy load; the service degrades gracefully rather than crashing
-
-### Local
-
-![Local 2000 users stats](public/L2000S.png)
-
-![Local 2000 users charts](public/L2000C.png)
-
-![Local 2000 users terminal](public/L2000T.png)
-
-Local Mac handled **2,000 concurrent users** with p95 320ms and 0 rebuffers, confirming that the 0.25 vCPU Fargate constraint - not the application code - is the binding bottleneck. The breaking point shifts from ~500 users on Fargate to 2,000+ locally, a ~4x difference matching the CPU ratio (0.25 vCPU vs ~1 effective vCPU on a MacBook).
 
 ---
 
