@@ -1,4 +1,4 @@
-# Homework 10 — Distributed Key-Value Store
+# Homework 10 : Distributed Key-Value Store
 
 ## Overview
 This project implements two distributed in-memory key-value stores:
@@ -7,75 +7,7 @@ This project implements two distributed in-memory key-value stores:
 
 Both are built in Go, containerized with Docker, and load tested with Locust.
 
----
-
-## Project Structure
-```
-homework_10/
-├── leader-follower/
-│   ├── main.go              # startup, config, routing
-│   ├── store.go             # in-memory KV store with versioning
-│   ├── handlers.go          # HTTP handlers for set/get/local_read/internal_set
-│   ├── replication.go       # W/R quorum logic
-│   ├── consistency_test.go  # unit tests
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── leaderless/
-│   ├── main.go
-│   ├── store.go
-│   ├── handlers.go
-│   ├── replication.go       # W=N propagation logic
-│   ├── consistency_test.go  # unit tests
-│   ├── Dockerfile
-│   └── docker-compose.yml
-└── loadtest/
-    ├── locustfile_lf.py     # leader-follower load test (tracks stale reads + R/W intervals)
-    ├── locustfile_ll.py     # leaderless load test (tracks stale reads + R/W intervals)
-    ├── generate_graphs.py   # generates latency CDFs and R/W interval histograms
-    ├── requirements.txt
-    ├── csv/                 # Locust CSV exports + auto-saved R/W interval data
-    └── graphs/              # generated graph output
-```
-
----
-
-## How to Run
-
-### Leader-Follower Cluster
-
-```bash
-cd leader-follower
-
-# Strategy 1: W=5, R=1
-W=5 R=1 docker compose up --build
-
-# Strategy 2: W=1, R=5
-W=1 R=5 docker compose up --build
-
-# Strategy 3: W=3, R=3
-W=3 R=3 docker compose up --build
-```
-
-### Leaderless Cluster
-
-```bash
-cd leaderless
-docker compose up --build
-```
-
-### Load Testing
-
-```bash
-cd loadtest
-pip install -r requirements.txt
-
-# Leader-Follower
-locust -f locustfile_lf.py --host http://localhost:8080 --web-port 8090
-
-# Leaderless
-locust -f locustfile_ll.py --host http://localhost:8081 --web-port 8090
-```
-
+Locust: 
 Open http://localhost:8090 — set 10 users, spawn rate 2.
 
 > **Load test parameters used:**
@@ -84,34 +16,7 @@ Open http://localhost:8090 — set 10 users, spawn rate 2.
 > - Duration: ~90 seconds per run
 > - Key space: 20 keys (ensures reads and writes hit the same key frequently)
 
-### Unit Tests
 
-```bash
-# cluster must be running first
-go test -v ./leader-follower/
-go test -v ./leaderless/
-```
-
-#### Leader-Follower tests (`consistency_test.go`):
-
-| Test | What it proves |
-|------|---------------|
-| `TestSetThenReadLeader` | After leader acks a write, reading from the leader always returns the correct value and version |
-| `TestSetThenReadFollower` | After leader acks a write, quorum reads from every follower return consistent data |
-| `TestLocalReadInconsistencyWindow` | Fires `/local_read` on followers immediately after a write — catches stale state during the propagation window (expected for W<5) |
-| `TestMultipleWritesVersionMonotonicity` | Five consecutive writes to the same key produce strictly increasing version numbers, consistent across all followers |
-
-#### Leaderless tests (`consistency_test.go`):
-
-| Test | What it proves |
-|------|---------------|
-| `TestInconsistencyWindow` | Fires reads concurrently with a write — some reads land before propagation completes and return stale data, proving the inconsistency window exists |
-| `TestReadFromCoordinatorAfterAck` | After coordinator returns 201, reading from the same coordinator is always consistent |
-| `TestReadFromPeerAfterAck` | After coordinator returns 201, reading from any other node is also consistent (W=N guarantees this) |
-| `TestAnyNodeCanWrite` | Each of the 5 nodes can act as write coordinator and all nodes converge after each write |
-| `TestLocalReadDuringPropagation` | Uses `/local_read` to race against propagation without the 50ms read delay — reliably exposes stale state mid-window |
-
----
 
 ## API Endpoints
 
@@ -303,60 +208,6 @@ curl "http://localhost:8080/get?key=foo"
 ![LL 90w10r stats](screenshots/leaderless/90W,10R_stats.png)
 ![LL 90w10r charts](screenshots/leaderless/90W,10R_charts.png)
 
----
-
-## How the Code Works
-
-### Leader-Follower — Code Walkthrough
-
-**On a write (`POST /set`):**
-1. `handleSet` in `handlers.go` receives the request on the **leader only** (followers return 403).
-2. The leader calls `store.NextVersion(key)` to get a monotonically increasing version number for that key.
-3. It calls `replicate()` in `replication.go`, which:
-   - Writes to the leader's local store immediately.
-   - If `W=1`: fires goroutines to all followers and returns immediately (fire-and-forget).
-   - If `W>1`: launches one goroutine per follower, each sleeping 200ms before sending `POST /internal/set`. Collects results on a channel and returns as soon as `W-1` follower acks arrive.
-4. Each follower's `handleInternalSet` sleeps 100ms (simulated storage latency) then writes to its local store.
-
-**On a read (`GET /get`):**
-1. `handleGet` calls `quorumRead()`.
-2. If `R=1`: returns the local value directly — very fast, but can be stale.
-3. If `R>1`: sends `GET /local_read` to `R-1` peers concurrently, collecting results on a channel. Returns the entry with the **highest version number** — this is how freshness is guaranteed when `W+R > N`.
-4. Each follower's `handleLocalRead` sleeps 50ms before responding.
-
-**Tricky parts:**
-- The quorum short-circuit: for `W>1`, we return as soon as we have enough acks even if other goroutines are still in-flight. Those goroutines continue writing in the background.
-- Version numbers are per-key and stored in a `sync.Map` so concurrent writes to different keys don't block each other.
-- The `W+R > N` invariant (W=3, R=3 with N=5) guarantees the read quorum always overlaps with the write quorum — at least one node in the read set must have seen the latest write.
-
----
-
-### Leaderless — Code Walkthrough
-
-**On a write (`POST /set`):**
-1. `handleSet` in `handlers.go` — **any node** can receive this. That node becomes the Write Coordinator.
-2. Coordinator writes to its own local store first (always consistent after ack).
-3. Calls `propagateToAll()` in `replication.go`, which fans out to all 4 peers concurrently. Each goroutine sleeps 200ms then sends `POST /internal/set`.
-4. Waits for **all** peers to ack (W=N). Only then returns 201.
-
-**On a read (`GET /get`):**
-1. `handleGet` — any node receives the request and returns its **local value only** (R=1).
-2. Sleeps 50ms to simulate read latency.
-3. No coordination — this is intentionally simple and exposes the inconsistency window.
-
-**The inconsistency window:**
-Between step 3 (coordinator writes locally) and step 4 (all peers ack), a read to any non-coordinator peer will return stale data. The window is ~300ms (200ms coordinator sleep + 100ms peer write). With 10 users and 20 keys at 1% writes, the chance of a read hitting a peer during this exact window is low — which explains our 0 stale reads in load tests. A dedicated unit test that fires reads immediately after a write reliably catches this.
-
----
-
-### How the Load Tester Guarantees Local-in-Time Reads and Writes
-
-The load tester uses a **small fixed key space of 20 keys** (`key0`–`key19`) shared across all 10 concurrent users. With 10 users each making ~35-75 requests/second, each individual key receives roughly 2-4 requests/second. This means reads and writes to the same key are clustered closely together in time — on average within 250-500ms of each other — which is well within the inconsistency window for W=1 writes.
-
-Version tracking is thread-safe: `record_write()` stores the latest known version per key under a lock. `is_stale()` checks if a read returns an older version than the last known write. A 404 (key not yet written) is not counted as stale.
-
----
-
 ## Results Analysis
 
 ### Load Test Summary
@@ -408,32 +259,10 @@ RPS drops from 37.6 → 20.5. Writes take ~480ms — the coordinator must wait f
 | Financial transactions / inventory | **W=3, R=3** | Quorum overlap guarantees no stale reads, balanced latency |
 | Simple replication, no single leader | **Leaderless** | No SPOF leader, any node accepts writes, good for geo-distribution |
 
-### Stale Reads — Why Zero?
-
-All strategies showed 0 stale reads across all 16 runs. This is explained by:
-- **W=5, R=1**: Structurally impossible — write only returns after all nodes updated.
-- **W=3, R=3**: W+R > N guarantees quorum overlap; at least one node in the read set has the latest version.
-- **W=1, R=5 and Leaderless**: Theoretically possible but the inconsistency window (~300ms) is short relative to our inter-request time (~26ms at 38 RPS). The probability of a read hitting the exact window is low at 10 concurrent users.
-
-To reliably observe stale reads in W=1 or leaderless, you would need significantly higher concurrency (100+ users) or a larger write ratio on a write-heavy key.
-
----
 
 ## Graphs
 
 Each ratio figure has two panels — **Read Latency** and **Write Latency** — with grouped bars showing Median (lighter) and p95 (darker) for all 4 strategies side by side.
-
-Generate / regenerate:
-```bash
-cd loadtest
-pip install matplotlib pandas numpy
-python3.12 generate_graphs.py
-```
-
-**Demo mode** (no CSV needed): runs automatically with representative values.
-
-**With real data**: export *Download Stats CSV* from Locust → save to `loadtest/csv/lf_<strategy>_<ratio>_stats.csv`. R/W interval CSVs are auto-saved by the locust files to `loadtest/csv/rw_intervals_lf.csv` / `rw_intervals_ll.csv`.
-
 ---
 
 ### 1% Writes / 99% Reads
