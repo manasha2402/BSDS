@@ -1,0 +1,99 @@
+# ---------------------------------------------------------------------------
+# One docker-compose file covers all three W/R strategies.
+# Switch strategies by setting W and R before running:
+#
+#   Strategy 1 (W=5, R=1):  W=5 R=1 docker compose up --build
+#   Strategy 2 (W=1, R=5):  W=1 R=5 docker compose up --build
+#   Strategy 3 (W=3, R=3):  W=3 R=3 docker compose up --build
+#
+# Default (no env vars set) is W=5, R=1.
+# ---------------------------------------------------------------------------
+
+x-follower-peers: &leader-peers
+  PEERS: >-
+    http://follower1:8080,
+    http://follower2:8080,
+    http://follower3:8080,
+    http://follower4:8080
+
+services:
+
+  leader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: leader
+    environment:
+      ROLE: leader
+      PORT: "8080"
+      W: "${W:-5}"
+      R: "${R:-1}"
+      <<: *leader-peers
+    ports:
+      - "8080:8080"   # exposed so load tester can reach leader directly
+    networks:
+      - kvnet
+
+  follower1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: follower1
+    environment:
+      ROLE: follower
+      PORT: "8080"
+      W: "${W:-5}"
+      R: "${R:-1}"
+    ports:
+      - "8081:8080"
+    networks:
+      - kvnet
+
+  follower2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: follower2
+    environment:
+      ROLE: follower
+      PORT: "8080"
+      W: "${W:-5}"
+      R: "${R:-1}"
+    ports:
+      - "8082:8080"
+    networks:
+      - kvnet
+
+  follower3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: follower3
+    environment:
+      ROLE: follower
+      PORT: "8080"
+      W: "${W:-5}"
+      R: "${R:-1}"
+    ports:
+      - "8083:8080"
+    networks:
+      - kvnet
+
+  follower4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: follower4
+    environment:
+      ROLE: follower
+      PORT: "8080"
+      W: "${W:-5}"
+      R: "${R:-1}"
+    ports:
+      - "8084:8080"
+    networks:
+      - kvnet
+
+networks:
+  kvnet:
+    driver: bridge

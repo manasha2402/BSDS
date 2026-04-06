@@ -1,0 +1,112 @@
+
+# ---------------------------------------------------------------------------
+# Leaderless cluster — 5 identical nodes.
+# Any node can receive reads or writes from clients.
+# Fixed at W=N (all nodes), R=1 (local read only).
+#
+# Start the cluster:
+#   docker compose up --build
+#
+# Each node is reachable from the host on its own port:
+#   node1 → localhost:8081
+#   node2 → localhost:8082
+#   node3 → localhost:8083
+#   node4 → localhost:8084
+#   node5 → localhost:8085
+# ---------------------------------------------------------------------------
+
+services:
+
+  node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node1
+    environment:
+      NODE_ID: "node1"
+      PORT: "8080"
+      PEERS: >-
+        http://node2:8080,
+        http://node3:8080,
+        http://node4:8080,
+        http://node5:8080
+    ports:
+      - "8081:8080"
+    networks:
+      - kvnet
+
+  node2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node2
+    environment:
+      NODE_ID: "node2"
+      PORT: "8080"
+      PEERS: >-
+        http://node1:8080,
+        http://node3:8080,
+        http://node4:8080,
+        http://node5:8080
+    ports:
+      - "8082:8080"
+    networks:
+      - kvnet
+
+  node3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node3
+    environment:
+      NODE_ID: "node3"
+      PORT: "8080"
+      PEERS: >-
+        http://node1:8080,
+        http://node2:8080,
+        http://node4:8080,
+        http://node5:8080
+    ports:
+      - "8083:8080"
+    networks:
+      - kvnet
+
+  node4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node4
+    environment:
+      NODE_ID: "node4"
+      PORT: "8080"
+      PEERS: >-
+        http://node1:8080,
+        http://node2:8080,
+        http://node3:8080,
+        http://node5:8080
+    ports:
+      - "8084:8080"
+    networks:
+      - kvnet
+
+  node5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node5
+    environment:
+      NODE_ID: "node5"
+      PORT: "8080"
+      PEERS: >-
+        http://node1:8080,
+        http://node2:8080,
+        http://node3:8080,
+        http://node4:8080
+    ports:
+      - "8085:8080"
+    networks:
+      - kvnet
+
+networks:
+  kvnet:
+    driver: bridge
