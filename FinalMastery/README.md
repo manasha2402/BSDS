@@ -95,6 +95,9 @@ Debugging the live deployment required judgment that no tool could automate, rec
 
 ---
 
+## API Specification
+
+All responses use `Content-Type: application/json`.
 
 ### GET /health
 
@@ -166,6 +169,30 @@ Returns `204`. After deletion:
 - The file at the captured `url` must no longer return 200
 
 Deletion must complete within 5 seconds. Always returns `204` — even if the photo was already deleted (idempotent).
+
+---
+
+## Scoring
+
+### Correctness Scenarios (110 pts)
+
+Critical scenarios (Yes): if any fail, all remaining scenarios are skipped.
+
+| Scenario | Critical | Points |
+|---|---|---|
+| S1 Health Check | Yes | 5 |
+| S2 Album Create + Read | Yes | 15 |
+| S3 Async Photo Upload | Yes | 20 |
+| S4 Photo Delete | Yes | 10 |
+| S5 List Albums | Yes | 10 |
+| S6 Strict Health Body | | 5 |
+| S7 Delete (Intermediate) | | 10 |
+| S8 Delete (Advanced) | | 10 |
+| S9 Delete (Super) | | 10 |
+| S10 Per-Album Photo Sequence | | 15 |
+| **Subtotal** | | **110** |
+
+S6–S10 failures do not stop load tests. A zero-point health probe runs between every pair of scenarios.
 
 ---
 
@@ -340,15 +367,15 @@ After `terraform apply`, wait ~30 seconds for the health check to pass, then ret
 
 **Symptom:** Correctness scenarios S1–S5 all pass. The moment S11 (concurrent album creates) starts, the ALB starts returning 504s in bulk. ECS logs show nothing — the container appears fine.
 
-**Cause:** The original stack used **PostgreSQL via `pgxpool`**. The default `pgxpool.New` without any config creates a pool of only **4 connections**. Under S11's concurrent load, all 4 connections were held, new requests queued, hit the ALB idle timeout, and the ALB dropped them as 504.
+**Cause:** The original stack used **MySQL**. The default connection pool config creates a small number of connections. Under S11's concurrent load, all connections were held, new requests queued, hit the ALB idle timeout, and the ALB dropped them as 504.
 
 **What we tried first (wrong):** Increasing ECS task count and vCPU. Made no difference — the bottleneck was the DB pool, not CPU.
 
-**Fix:** Replaced PostgreSQL entirely with DynamoDB. DynamoDB uses an HTTP API — there is no connection pool. Each request is an independent HTTPS call. 150 concurrent goroutines across 3 ECS tasks can all fire simultaneously with zero contention.
+**Fix:** Replaced MySQL entirely with DynamoDB. DynamoDB uses an HTTP API — there is no connection pool. Each request is an independent HTTPS call. 150 concurrent goroutines across 3 ECS tasks can all fire simultaneously with zero contention.
 
 ```go
 // Before — pool exhaustion waiting to happen
-pool, err := pgxpool.New(ctx, connStr) // default max_conns = 4
+db, err := sql.Open("mysql", dsn) // limited connection pool
 
 // After — no pool, no limit
 client := dynamodb.NewFromConfig(cfg) // HTTP client, unlimited concurrency
